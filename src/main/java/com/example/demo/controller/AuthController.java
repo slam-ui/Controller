@@ -1,13 +1,16 @@
 package com.example.demo.controller;
 
-import com.example.demo.dto.AuthRequest;
-import com.example.demo.dto.AuthResponse;
-import com.example.demo.dto.RegisterRequest;
+import com.example.demo.dto.JwtAuthResponseDto;
+import com.example.demo.dto.LoginDto;
+import com.example.demo.dto.RegisterDto;
 import com.example.demo.service.AuthService;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -16,15 +19,21 @@ public class AuthController {
 
     private final AuthService authService;
 
-    // POST http://localhost:8080/api/auth/register
-    @PostMapping("/register")
-    public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
-        return ResponseEntity.ok(authService.register(request));
+    @PostMapping("/login")
+    public ResponseEntity<JwtAuthResponseDto> login(@RequestBody LoginDto loginDto){
+        String token = authService.login(loginDto);
+        // Эта строка теперь будет работать корректно
+        JwtAuthResponseDto jwtAuthResponse = new JwtAuthResponseDto(token);
+        return ResponseEntity.ok(jwtAuthResponse);
     }
 
-    // POST http://localhost:8080/api/auth/login
-    @PostMapping("/login")
-    public ResponseEntity<AuthResponse> authenticate(@Valid @RequestBody AuthRequest request) {
-        return ResponseEntity.ok(authService.authenticate(request));
+    @PostMapping("/register")
+    public ResponseEntity<String> register(@RequestBody RegisterDto registerDto) {
+        try {
+            String response = authService.register(registerDto);
+            return new ResponseEntity<>(response, HttpStatus.CREATED);
+        } catch (IllegalArgumentException e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+        }
     }
 }

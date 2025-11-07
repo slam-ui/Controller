@@ -16,13 +16,19 @@ public class AuthController {
 
     private final AuthService authService;
 
-    // POST http://localhost:8080/api/auth/register
+    /**
+     * Регистрация нового пользователя
+     * POST /api/auth/register
+     */
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
         return ResponseEntity.ok(authService.register(request));
     }
 
-    // POST http://localhost:8080/api/auth/login
+    /**
+     * Вход в систему
+     * POST /api/auth/login
+     */
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> authenticate(@Valid @RequestBody AuthRequest request) {
         return ResponseEntity.ok(authService.authenticate(request));

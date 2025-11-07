@@ -26,17 +26,14 @@ public class DataInitializer implements CommandLineRunner {
     public void run(String... args) {
         log.info("Starting data initialization...");
 
-        // Создаем пользователей, если их нет
         if (userRepository.count() == 0) {
             createUsers();
         }
 
-        // Создаем категории
         if (categoryRepository.count() == 0) {
             createCategories();
         }
 
-        // Создаем товары
         if (productRepository.count() == 0) {
             createProducts();
         }

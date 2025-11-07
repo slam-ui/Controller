@@ -1,57 +1,63 @@
 package com.example.demo.controller;
 
-import com.example.demo.model.Product;
+import com.example.demo.dto.ProductDto;
 import com.example.demo.service.ProductService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor; // <--- УБЕДИТЕСЬ, ЧТО ЭТОТ ИМПОРТ ЕСТЬ
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/products")
+@RequiredArgsConstructor // <--- ВОТ НЕДОСТАЮЩАЯ АННОТАЦИЯ
 public class ProductController {
 
     private final ProductService productService;
 
-    @Autowired
-    public ProductController(ProductService productService) {
-        this.productService = productService;
-    }
-
-    // CREATE: POST http://localhost:8080/api/products
+    // Только для ADMIN
     @PostMapping
-    public Product createProduct(@RequestBody Product product) {
-        return productService.createProduct(product);
+    public ResponseEntity<ProductDto> createProduct(@RequestBody ProductDto productDto) {
+        return new ResponseEntity<>(productService.createProduct(productDto), HttpStatus.CREATED);
     }
 
-    // READ (All): GET http://localhost:8080/api/products
+    // Для всех
     @GetMapping
-    public List<Product> getAllProducts() {
+    public List<ProductDto> getAllProducts() {
         return productService.getAllProducts();
     }
 
-    // READ (One): GET http://localhost:8080/api/products/1
+    // Для всех
     @GetMapping("/{id}")
-    public ResponseEntity<Product> getProductById(@PathVariable Long id) {
-        return productService.getProductById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<ProductDto> getProductById(@PathVariable Long id) {
+        return ResponseEntity.ok(productService.getProductById(id));
     }
 
-    // UPDATE: PUT http://localhost:8080/api/products/1
+    // Только для ADMIN
     @PutMapping("/{id}")
-    public ResponseEntity<Product> updateProduct(@PathVariable Long id, @RequestBody Product productDetails) {
-        return productService.updateProduct(id, productDetails)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<ProductDto> updateProduct(@PathVariable Long id, @RequestBody ProductDto productDto) {
+        return ResponseEntity.ok(productService.updateProduct(id, productDto));
     }
 
-    // DELETE: DELETE http://localhost:8080/api/products/1
+    // Только для ADMIN
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteProduct(@PathVariable Long id) {
-        if (productService.deleteProduct(id)) {
-            return ResponseEntity.ok().build();
-        }
-        return ResponseEntity.notFound().build();
+    public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
+        productService.deleteProduct(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    // --- Эндпоинты для бизнес-операций ---
+
+    // Для всех
+    @GetMapping("/search/name")
+    public List<ProductDto> searchByName(@RequestParam String keyword) {
+        return productService.searchProductsByName(keyword);
+    }
+
+    // Для всех
+    @GetMapping("/search/price")
+    public List<ProductDto> searchByPriceRange(@RequestParam BigDecimal min, @RequestParam BigDecimal max) {
+        return productService.searchProductsByPriceRange(min, max);
     }
 }

@@ -1,6 +1,8 @@
 package com.example.controller;
 
+import com.example.controller.model.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,15 +16,33 @@ public class ShopService {
     @Autowired private CustomerRepository customerRepository;
     @Autowired private OrderRepository orderRepository;
 
-    // БИЗНЕС-ОПЕРАЦИЯ 1: Регистрация клиента (с проверкой)
-    public Customer registerCustomer(String name, String email) {
+    // Подключаем шифровальщик паролей
+    @Autowired private PasswordEncoder passwordEncoder;
+
+    // ОБНОВЛЕННАЯ РЕГИСТРАЦИЯ
+    public Customer registerCustomer(String name, String email, String password, String role) {
         if (customerRepository.findByEmail(email) != null) {
-            throw new RuntimeException("Клиент с таким email уже существует!");
+            throw new RuntimeException("Email уже занят!");
         }
-        return customerRepository.save(new Customer(name, email));
+
+        // 1. Проверка пароля (минимум 8 символов)
+        if (password.length() < 8) {
+            throw new RuntimeException("Пароль слишком короткий! Нужно минимум 8 символов.");
+        }
+
+        // 2. Шифруем пароль
+        String encodedPassword = passwordEncoder.encode(password);
+
+        // 3. Если роль не указана, по умолчанию USER
+        String userRole = (role == null || role.isEmpty()) ? "USER" : role;
+
+        Customer newCustomer = new Customer(name, email, encodedPassword, userRole);
+        return customerRepository.save(newCustomer);
     }
 
-    // БИЗНЕС-ОПЕРАЦИЯ 2: Оформление заказа (Транзакция: создаем заказ + уменьшаем склад)
+    // --- Остальные методы (makeOrder, payOrder и т.д.) оставьте без изменений ---
+    // (Ниже для примера метод покупки, убедитесь что он у вас есть)
+
     @Transactional
     public Order makeOrder(Long customerId, Long productId, Integer amount) {
         Customer customer = customerRepository.findById(customerId).orElseThrow(() -> new RuntimeException("Клиент не найден"));
@@ -32,11 +52,9 @@ public class ShopService {
             throw new RuntimeException("На складе недостаточно товара!");
         }
 
-        // Уменьшаем количество на складе
         product.setQuantity(product.getQuantity() - amount);
         productRepository.save(product);
 
-        // Создаем заказ
         Order order = new Order();
         order.setCustomer(customer);
         order.setProduct(product);
@@ -48,32 +66,16 @@ public class ShopService {
         return orderRepository.save(order);
     }
 
-    // БИЗНЕС-ОПЕРАЦИЯ 3: Оплата заказа (Меняем статус)
-    public Order payOrder(Long orderId) {
-        Order order = orderRepository.findById(orderId).orElseThrow();
-        if (!"CREATED".equals(order.getStatus())) {
-            throw new RuntimeException("Заказ уже обработан или отменен");
-        }
-        order.setStatus("PAID");
-        return orderRepository.save(order);
+    public List<Order> getCustomerHistory(Long customerId) {
+        return orderRepository.findByCustomerId(customerId);
     }
 
-    // БИЗНЕС-ОПЕРАЦИЯ 4: Отмена заказа (Транзакция: меняем статус + возвращаем товар на склад)
-    @Transactional
     public Order cancelOrder(Long orderId) {
         Order order = orderRepository.findById(orderId).orElseThrow();
-
-        // Возвращаем товары на склад
         Product product = order.getProduct();
         product.setQuantity(product.getQuantity() + order.getAmount());
         productRepository.save(product);
-
         order.setStatus("CANCELED");
         return orderRepository.save(order);
-    }
-
-    // БИЗНЕС-ОПЕРАЦИЯ 5: Поиск всех заказов клиента
-    public List<Order> getCustomerHistory(Long customerId) {
-        return orderRepository.findByCustomerId(customerId);
     }
 }

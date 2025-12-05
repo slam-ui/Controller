@@ -13,6 +13,12 @@ target/
 .springBeans
 .sts4-cache
 
+keystore.p12
+keystore_b64.txt
+*.crt
+*.csr
+*.p12
+
 ### IntelliJ IDEA ###
 .idea
 *.iws

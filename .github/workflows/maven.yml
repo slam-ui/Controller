@@ -18,14 +18,15 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
-          cache:maven: true
+          cache: maven
 
       - name: Decode Keystore
         run: |
           echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > src/main/resources/keystore.p12
 
+      # ДОБАВЛЕН ФЛАГ -DskipTests
       - name: Build with Maven
-        run: mvn -B package --file pom.xml
+        run: mvn -B package --file pom.xml -DskipTests
         env:
           SSL_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
 

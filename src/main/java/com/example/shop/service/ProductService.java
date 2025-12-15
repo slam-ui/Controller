@@ -1,56 +1,52 @@
 package com.example.shop.service;
 
 import com.example.shop.entity.Product;
+import com.example.shop.repository.ProductRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicLong;
 
 @Service
+@RequiredArgsConstructor
 public class ProductService {
-    // Наша "база данных" в памяти
-    private final List<Product> storage = new ArrayList<>();
-    // Генератор ID (1, 2, 3...)
-    private final AtomicLong idGenerator = new AtomicLong(1);
 
-    // 1. Создать
+    private final ProductRepository repository;
+
+    // Create
     public Product create(Product product) {
-        product.setId(idGenerator.getAndIncrement());
-        storage.add(product);
-        return product;
+        return repository.save(product);
     }
 
-    // 2. Получить все
+    // Read All
     public List<Product> findAll() {
-        return storage;
+        return repository.findAll();
     }
 
-    // 3. Получить по ID
+    // Read One
     public Optional<Product> findById(Long id) {
-        return storage.stream()
-                .filter(p -> p.getId().equals(id))
-                .findFirst();
+        return repository.findById(id);
     }
 
-    // 4. Обновить
-    public Optional<Product> update(Long id, Product newData) {
-        Optional<Product> existing = findById(id);
-        if (existing.isPresent()) {
-            Product product = existing.get();
-            // Обновляем поля
-            product.setName(newData.getName());
-            product.setPrice(newData.getPrice());
-            product.setDescription(newData.getDescription());
-            product.setCategoryId(newData.getCategoryId());
-            return Optional.of(product);
-        }
-        return Optional.empty();
+    // Update
+    public Optional<Product> update(Long id, Product newProduct) {
+        return repository.findById(id)
+                .map(existing -> {
+                    existing.setName(newProduct.getName());
+                    existing.setPrice(newProduct.getPrice());
+                    existing.setDescription(newProduct.getDescription());
+                    existing.setCategory(newProduct.getCategory());
+                    return repository.save(existing);
+                });
     }
 
-    // 5. Удалить
+    // Delete
     public boolean delete(Long id) {
-        return storage.removeIf(p -> p.getId().equals(id));
+        if (repository.existsById(id)) {
+            repository.deleteById(id);
+            return true;
+        }
+        return false;
     }
 }

@@ -1,46 +1,52 @@
 package com.example.shop.service;
 
 import com.example.shop.entity.Order;
+import com.example.shop.repository.OrderRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicLong;
 
 @Service
+@RequiredArgsConstructor
 public class OrderService {
-    private final List<Order> storage = new ArrayList<>();
-    private final AtomicLong idGenerator = new AtomicLong(1);
 
+    private final OrderRepository repository;
+
+    // Создать
     public Order create(Order order) {
-        order.setId(idGenerator.getAndIncrement());
-        // В реальном приложении здесь ставилась бы текущая дата
-        storage.add(order);
-        return order;
+        // Здесь мы предполагаем, что в order уже передан объект User
+        return repository.save(order);
     }
 
+    // Получить все
     public List<Order> findAll() {
-        return storage;
+        return repository.findAll();
     }
 
+    // Получить по ID
     public Optional<Order> findById(Long id) {
-        return storage.stream().filter(o -> o.getId().equals(id)).findFirst();
+        return repository.findById(id);
     }
 
+    // Обновить
     public Optional<Order> update(Long id, Order newData) {
-        Optional<Order> existing = findById(id);
-        if (existing.isPresent()) {
-            Order order = existing.get();
-            order.setUserId(newData.getUserId());
-            order.setStatus(newData.getStatus());
-            order.setCreatedAt(newData.getCreatedAt());
-            return Optional.of(order);
-        }
-        return Optional.empty();
+        return repository.findById(id)
+                .map(existing -> {
+                    existing.setUser(newData.getUser());
+                    existing.setStatus(newData.getStatus());
+                    existing.setCreatedDate(newData.getCreatedDate());
+                    return repository.save(existing);
+                });
     }
 
+    // Удалить
     public boolean delete(Long id) {
-        return storage.removeIf(o -> o.getId().equals(id));
+        if (repository.existsById(id)) {
+            repository.deleteById(id);
+            return true;
+        }
+        return false;
     }
 }

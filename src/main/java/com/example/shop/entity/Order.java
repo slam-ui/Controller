@@ -1,16 +1,24 @@
 package com.example.shop.entity;
 
-import lombok.AllArgsConstructor;
+import jakarta.persistence.*;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
+import java.util.List;
 
+@Entity
 @Data
-@AllArgsConstructor
-@NoArgsConstructor
+@Table(name = "orders")
 public class Order {
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private Long userId;
-    private String status; // Например: NEW, PAID
-    private LocalDateTime createdAt;
+
+    private LocalDateTime createdDate;
+    private String status; // NEW, PAID, SHIPPED
+
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private User user;
+
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
+    private List<OrderItem> items;
 }

@@ -1,43 +1,49 @@
 package com.example.shop.service;
 
 import com.example.shop.entity.Category;
+import com.example.shop.repository.CategoryRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicLong;
 
 @Service
+@RequiredArgsConstructor
 public class CategoryService {
-    private final List<Category> storage = new ArrayList<>();
-    private final AtomicLong idGenerator = new AtomicLong(1);
 
+    private final CategoryRepository repository;
+
+    // Создать
     public Category create(Category category) {
-        category.setId(idGenerator.getAndIncrement());
-        storage.add(category);
-        return category;
+        return repository.save(category);
     }
 
+    // Получить все
     public List<Category> findAll() {
-        return storage;
+        return repository.findAll();
     }
 
+    // Получить по ID
     public Optional<Category> findById(Long id) {
-        return storage.stream().filter(c -> c.getId().equals(id)).findFirst();
+        return repository.findById(id);
     }
 
+    // Обновить
     public Optional<Category> update(Long id, Category newData) {
-        Optional<Category> existing = findById(id);
-        if (existing.isPresent()) {
-            Category category = existing.get();
-            category.setName(newData.getName());
-            return Optional.of(category);
-        }
-        return Optional.empty();
+        return repository.findById(id)
+                .map(existing -> {
+                    existing.setName(newData.getName());
+                    return repository.save(existing);
+                });
     }
 
+    // Удалить
     public boolean delete(Long id) {
-        return storage.removeIf(c -> c.getId().equals(id));
+        if (repository.existsById(id)) {
+            repository.deleteById(id);
+            return true;
+        }
+        return false;
     }
 }

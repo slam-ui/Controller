@@ -1,16 +1,21 @@
 package com.example.shop.entity;
 
-import lombok.AllArgsConstructor;
+import jakarta.persistence.*;
 import lombok.Data;
-import lombok.NoArgsConstructor;
+import java.math.BigDecimal;
 
+@Entity
 @Data
-@AllArgsConstructor
-@NoArgsConstructor
+@Table(name = "products")
 public class Product {
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
     private String name;
-    private Double price;
+    private BigDecimal price; // Для денег лучше использовать BigDecimal
     private String description;
-    private Long categoryId; // Ссылка на категорию (пока по ID)
+
+    @ManyToOne
+    @JoinColumn(name = "category_id") // В таблице будет колонка category_id
+    private Category category;
 }

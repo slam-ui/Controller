@@ -1,45 +1,51 @@
 package com.example.shop.service;
 
 import com.example.shop.entity.User;
+import com.example.shop.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicLong;
 
 @Service
+@RequiredArgsConstructor
 public class UserService {
-    private final List<User> storage = new ArrayList<>();
-    private final AtomicLong idGenerator = new AtomicLong(1);
 
+    private final UserRepository repository;
+
+    // Создать
     public User create(User user) {
-        user.setId(idGenerator.getAndIncrement());
-        storage.add(user);
-        return user;
+        return repository.save(user);
     }
 
+    // Получить все
     public List<User> findAll() {
-        return storage;
+        return repository.findAll();
     }
 
+    // Получить по ID
     public Optional<User> findById(Long id) {
-        return storage.stream().filter(u -> u.getId().equals(id)).findFirst();
+        return repository.findById(id);
     }
 
+    // Обновить
     public Optional<User> update(Long id, User newData) {
-        Optional<User> existing = findById(id);
-        if (existing.isPresent()) {
-            User user = existing.get();
-            user.setUsername(newData.getUsername());
-            user.setEmail(newData.getEmail());
-            user.setPassword(newData.getPassword());
-            return Optional.of(user);
-        }
-        return Optional.empty();
+        return repository.findById(id)
+                .map(existing -> {
+                    existing.setUsername(newData.getUsername());
+                    existing.setEmail(newData.getEmail());
+                    existing.setPassword(newData.getPassword());
+                    return repository.save(existing);
+                });
     }
 
+    // Удалить
     public boolean delete(Long id) {
-        return storage.removeIf(u -> u.getId().equals(id));
+        if (repository.existsById(id)) {
+            repository.deleteById(id);
+            return true;
+        }
+        return false;
     }
 }

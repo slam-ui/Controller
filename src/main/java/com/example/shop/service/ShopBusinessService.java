@@ -11,6 +11,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
+import java.math.RoundingMode; // Не забудь импорт!
+
 @Service
 @RequiredArgsConstructor
 public class ShopBusinessService {
@@ -73,7 +75,8 @@ public class ShopBusinessService {
 
         for (Product p : products) {
             BigDecimal oldPrice = p.getPrice();
-            BigDecimal discount = oldPrice.multiply(BigDecimal.valueOf(discountPercent)).divide(BigDecimal.valueOf(100));
+            BigDecimal discount = oldPrice.multiply(BigDecimal.valueOf(discountPercent))
+                    .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
             p.setPrice(oldPrice.subtract(discount));
             productRepository.save(p);
         }
